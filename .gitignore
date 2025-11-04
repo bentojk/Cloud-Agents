@@ -305,8 +305,9 @@ dump.rdb
 # IDE & EDITORS
 # ============================================================================
 
-# VSCode
+# VSCode / Cursor
 .vscode/
+.cursor/
 *.code-workspace
 .history/
 
