@@ -1,8 +1,21 @@
-# Python
+# ============================================================================
+# CLOUD AGENTS - GITIGNORE
+# ============================================================================
+
+# ============================================================================
+# PYTHON / BACKEND
+# ============================================================================
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# C extensions
+*.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -16,59 +29,516 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Virtual environments
 venv/
 env/
 ENV/
+env.bak/
+venv.bak/
+.venv/
 
-# Node
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# pytype
+.pytype/
+
+# Cython
+cython_debug/
+
+# ============================================================================
+# NODE.JS / FRONTEND
+# ============================================================================
+
+# Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-dist/
-build/
+jspm_packages/
 
-# Environment
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js
+.next
+out
+
+# Nuxt.js
+.nuxt
+dist
+
+# Gatsby
+.cache/
+public
+
+# vuepress
+.vuepress/dist
+
+# Serverless
+.serverless/
+
+# FuseBox
+.fusebox/
+
+# DynamoDB Local
+.dynamodb/
+
+# TernJS
+.tern-port
+
+# Stores VSCode versions used for testing
+.vscode-test
+
+# Temporary folders
+tmp/
+temp/
+
+# Build outputs
+build/
+dist/
+*.bundle.js
+*.bundle.js.map
+
+# ============================================================================
+# BLENDER
+# ============================================================================
+
+# Blender backup files
+*.blend1
+*.blend2
+*.blend3
+*.blend*~
+
+# Blender cache
+__pycache__/
+*.pyc
+blender_cache/
+
+# Rendered output (usually not committed)
+render_output/
+*.png
+*.jpg
+*.jpeg
+*.exr
+*.hdr
+
+# Temporary Blender files
+*.crash.txt
+*.lock
+
+# Baked data
+bake_cache/
+*.baked
+
+# ============================================================================
+# ENVIRONMENT & SECRETS
+# ============================================================================
+
+# Environment variables
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*.local
+
+# Secret files
 *.key
 *.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+secrets.json
+credentials.json
+service-account.json
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
+# API keys
+api_keys.txt
+.api_keys
 
-# Testing
-.coverage
-.pytest_cache/
-htmlcov/
-.tox/
+# ============================================================================
+# DATABASES
+# ============================================================================
 
-# Logs
-logs/
-*.log
-
-# Database
+# SQLite
 *.db
 *.sqlite
 *.sqlite3
+*.db-shm
+*.db-wal
 
-# Temporary
+# PostgreSQL
+*.dump
+*.sql
+
+# Redis
+dump.rdb
+
+# ============================================================================
+# IDE & EDITORS
+# ============================================================================
+
+# VSCode
+.vscode/
+*.code-workspace
+.history/
+
+# IntelliJ IDEA / PyCharm / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+*~
+Session.vim
+.netrwhist
+tags
+
+# Emacs
+*~
+\#*\#
+.\#*
+.dir-locals.el
+
+# Eclipse
+.settings/
+.project
+.classpath
+.factorypath
+.buildpath
+
+# ============================================================================
+# OPERATING SYSTEM
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# DOCKER
+# ============================================================================
+
+# Docker volumes
+docker-data/
+postgres-data/
+redis-data/
+
+# ============================================================================
+# LOGS
+# ============================================================================
+
+# General logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Application logs
+app.log
+error.log
+combined.log
+access.log
+
+# ============================================================================
+# UPLOADS & MEDIA
+# ============================================================================
+
+# User uploads
+uploads/
+media/
+static/uploads/
+
+# Large files
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.zip
+*.tar.gz
+*.rar
+
+# ============================================================================
+# TESTING
+# ============================================================================
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Test results
+test-results/
+junit.xml
+
+# ============================================================================
+# CLOUD & CI/CD
+# ============================================================================
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# AWS
+.aws/
+
+# Google Cloud
+gcloud/
+
+# ============================================================================
+# TEMPORARY & CACHE
+# ============================================================================
+
+# General temporary files
 *.tmp
 *.temp
+*.swp
+*.swo
+*.bak
+*.cache
+
+# Cache directories
 .cache/
+.parcel-cache/
+.turbo/
 
-# OS
-Thumbs.db
-.DS_Store
+# ============================================================================
+# DOCUMENTATION (PROHIBITED)
+# ============================================================================
 
+# Never create these files
+*_SUMMARY.md
+*_OVERVIEW.md
+*_GUIDE.md
+CORRECTIONS_APPLIED.md
+MIGRATION_GUIDE.md
+README_REFACTORED.md
+REFACTORING_SUMMARY.md
+*_APPLIED.md
+*_CHANGES.md
+IMPLEMENTATION_*.md
+
+# ============================================================================
+# PROJECT SPECIFIC
+# ============================================================================
+
+# Agent outputs
+agent_outputs/
+agent_cache/
+
+# Blender renders
+renders/
+output/
+
+# Model weights (too large)
+models/*.pth
+models/*.ckpt
+models/*.safetensors
+
+# Training data
+data/raw/
+data/processed/
+
+# Experiments
+experiments/
+runs/
+mlruns/
+
+# ============================================================================
+# ALLOWLIST (Keep these)
+# ============================================================================
+
+# Keep important configs
+!.gitignore
+!.cursorrules
+!.dockerignore
+!.editorconfig
+
+# Keep documentation structure
+!README.md
+!CHANGELOG.md
+!API.md
+!ARCHITECTURE.md
+
+# Keep example configs
+!.env.example
+!config.example.json

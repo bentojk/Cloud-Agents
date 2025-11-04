@@ -1,0 +1,255 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # BACKEND - FastAPI
+  # ============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cloud-agents-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/cloudagents
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+    volumes:
+      - ./backend:/app
+      - backend-cache:/root/.cache
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cloud-agents-network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # FRONTEND - React/TypeScript
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cloud-agents-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:8000/api/v1
+      - REACT_APP_WS_URL=ws://localhost:8000/ws
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - frontend-cache:/root/.cache
+    depends_on:
+      - backend
+    networks:
+      - cloud-agents-network
+    command: npm run dev
+    stdin_open: true
+    tty: true
+
+  # ============================================================================
+  # DATABASE - PostgreSQL
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: cloud-agents-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cloudagents
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cloud-agents-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # CACHE - Redis
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: cloud-agents-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - cloud-agents-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # TASK QUEUE - Celery Worker (Optional)
+  # ============================================================================
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cloud-agents-celery
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/cloudagents
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./backend:/app
+      - backend-cache:/root/.cache
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - cloud-agents-network
+    command: celery -A tasks.celery worker --loglevel=info
+    profiles:
+      - with-celery
+
+  # ============================================================================
+  # CELERY MONITORING - Flower (Optional)
+  # ============================================================================
+  celery-flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cloud-agents-flower
+    restart: unless-stopped
+    ports:
+      - "5555:5555"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - celery-worker
+    networks:
+      - cloud-agents-network
+    command: celery -A tasks.celery flower --port=5555
+    profiles:
+      - with-celery
+
+  # ============================================================================
+  # DATABASE ADMIN - pgAdmin (Optional)
+  # ============================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cloud-agents-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@cloudagents.local
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - cloud-agents-network
+    profiles:
+      - with-admin
+
+  # ============================================================================
+  # NGINX - Reverse Proxy (Production)
+  # ============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: cloud-agents-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - cloud-agents-network
+    profiles:
+      - production
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+  backend-cache:
+    driver: local
+  frontend-cache:
+    driver: local
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  cloud-agents-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# USAGE
+# ============================================================================
+#
+# Development (basic):
+#   docker-compose up -d
+#
+# Development (with Celery):
+#   docker-compose --profile with-celery up -d
+#
+# Development (with admin tools):
+#   docker-compose --profile with-admin up -d
+#
+# Production:
+#   docker-compose --profile production up -d
+#
+# View logs:
+#   docker-compose logs -f [service-name]
+#
+# Rebuild:
+#   docker-compose up -d --build
+#
+# Stop:
+#   docker-compose down
+#
+# Clean (remove volumes):
+#   docker-compose down -v
+#
+# ============================================================================
+

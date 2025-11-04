@@ -1,0 +1,426 @@
+# Cloud Agents - Cursor AI Rules
+
+## 🎯 Project Overview
+Full-stack AI agent platform with FastAPI backend, React/TypeScript frontend, and Blender integration.
+
+## 📁 Project Structure
+```
+Cloud-Agents/
+├── backend/          # FastAPI + Python agents
+├── frontend/         # React + TypeScript UI
+├── agents/           # AI agent implementations
+├── blender/          # Blender integration scripts
+└── shared/           # Shared types/utilities
+```
+
+## 🐍 Python Standards (Backend/Agents)
+
+### Code Style
+- **Type hints**: Required for all functions
+- **Docstrings**: Google style for all public APIs
+- **Imports**: Absolute from project root
+- **Async**: Use async/await for I/O operations
+- **Error handling**: Specific exceptions, not generic Exception
+
+### Structure
+```python
+from typing import Optional, Dict, Any
+from pydantic import BaseModel, Field
+
+class AgentConfig(BaseModel):
+    """Agent configuration model.
+    
+    Attributes:
+        name: Agent identifier
+        model: LLM model to use
+        temperature: Sampling temperature (0.0-1.0)
+    """
+    name: str = Field(..., description="Agent identifier")
+    model: str = Field(default="gpt-4", description="LLM model")
+    temperature: float = Field(default=0.7, ge=0.0, le=1.0)
+
+async def process_request(config: AgentConfig) -> Dict[str, Any]:
+    """Process agent request.
+    
+    Args:
+        config: Agent configuration
+        
+    Returns:
+        Processing results with status and data
+        
+    Raises:
+        ValidationError: If config is invalid
+        ProcessingError: If processing fails
+    """
+    try:
+        # Validate input
+        if not config.name:
+            raise ValidationError("Agent name required")
+            
+        # Process with retry logic
+        result = await execute_with_retry(config)
+        return {"status": "success", "data": result}
+        
+    except Exception as e:
+        logger.error(f"Processing failed: {e}")
+        raise ProcessingError(f"Failed to process: {e}")
+```
+
+### FastAPI Patterns
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+
+router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
+
+@router.post("/execute", response_model=AgentResponse)
+async def execute_agent(
+    request: AgentRequest,
+    current_user: User = Depends(get_current_user)
+) -> AgentResponse:
+    """Execute AI agent with given configuration."""
+    try:
+        result = await agent_service.execute(request)
+        return AgentResponse(**result)
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e)
+        )
+```
+
+## ⚛️ TypeScript Standards (Frontend)
+
+### Code Style
+- **Types**: Explicit types, avoid `any`
+- **Interfaces**: For object shapes
+- **Async**: Use async/await, not promises chains
+- **Error handling**: Try-catch with proper error types
+- **Components**: Functional components with hooks
+
+### React Patterns
+```typescript
+import { useState, useEffect } from 'react';
+import type { FC } from 'react';
+
+interface AgentCardProps {
+  agent: Agent;
+  onExecute: (id: string) => Promise<void>;
+  isLoading?: boolean;
+}
+
+export const AgentCard: FC<AgentCardProps> = ({ 
+  agent, 
+  onExecute, 
+  isLoading = false 
+}) => {
+  const [status, setStatus] = useState<'idle' | 'running' | 'error'>('idle');
+
+  const handleExecute = async () => {
+    try {
+      setStatus('running');
+      await onExecute(agent.id);
+      setStatus('idle');
+    } catch (error) {
+      setStatus('error');
+      console.error('Execution failed:', error);
+    }
+  };
+
+  return (
+    <div className="agent-card">
+      <h3>{agent.name}</h3>
+      <button onClick={handleExecute} disabled={isLoading}>
+        {status === 'running' ? 'Running...' : 'Execute'}
+      </button>
+    </div>
+  );
+};
+```
+
+### API Client
+```typescript
+import axios, { AxiosError } from 'axios';
+
+interface ApiError {
+  message: string;
+  code: string;
+}
+
+class AgentService {
+  private baseURL = '/api/v1/agents';
+
+  async execute(config: AgentConfig): Promise<AgentResponse> {
+    try {
+      const { data } = await axios.post<AgentResponse>(
+        `${this.baseURL}/execute`,
+        config
+      );
+      return data;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new Error(error.response?.data.message || 'Request failed');
+      }
+      throw error;
+    }
+  }
+}
+
+export const agentService = new AgentService();
+```
+
+## 🤖 AI Agent Patterns
+
+### Agent Structure
+```python
+from typing import Protocol, AsyncIterator
+from abc import ABC, abstractmethod
+
+class BaseAgent(ABC):
+    """Base class for all AI agents."""
+    
+    def __init__(self, config: AgentConfig):
+        self.config = config
+        self.client = self._initialize_client()
+    
+    @abstractmethod
+    async def execute(self, prompt: str) -> str:
+        """Execute agent with prompt."""
+        pass
+    
+    @abstractmethod
+    async def stream(self, prompt: str) -> AsyncIterator[str]:
+        """Stream agent responses."""
+        pass
+    
+    async def _retry_on_failure(self, func, max_retries: int = 3):
+        """Retry logic for transient failures."""
+        for attempt in range(max_retries):
+            try:
+                return await func()
+            except TransientError as e:
+                if attempt == max_retries - 1:
+                    raise
+                await asyncio.sleep(2 ** attempt)
+```
+
+## 🎨 Blender Integration
+
+### Python Script Pattern
+```python
+import bpy
+from typing import Dict, Any
+
+def execute_blender_operation(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute Blender operation safely.
+    
+    Args:
+        params: Operation parameters
+        
+    Returns:
+        Operation results
+    """
+    try:
+        # Validate Blender context
+        if not bpy.context.scene:
+            raise RuntimeError("Invalid Blender context")
+        
+        # Execute operation
+        result = perform_operation(params)
+        
+        # Return structured result
+        return {
+            "status": "success",
+            "data": result,
+            "scene_info": {
+                "objects": len(bpy.context.scene.objects),
+                "frame": bpy.context.scene.frame_current
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+```
+
+## 🗂️ Configuration Management
+
+### Centralized Config
+```python
+# backend/config.py
+from pydantic_settings import BaseSettings
+from functools import lru_cache
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment."""
+    
+    # API
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+    api_prefix: str = "/api/v1"
+    
+    # Database
+    database_url: str
+    
+    # AI Models
+    openai_api_key: str
+    anthropic_api_key: str
+    default_model: str = "gpt-4"
+    
+    # Blender
+    blender_path: str = "/usr/bin/blender"
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached settings instance."""
+    return Settings()
+```
+
+## 🧪 Testing Standards
+
+### Backend Tests
+```python
+import pytest
+from httpx import AsyncClient
+from backend.main import app
+
+@pytest.mark.asyncio
+async def test_execute_agent():
+    """Test agent execution endpoint."""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/agents/execute",
+            json={"name": "test-agent", "prompt": "Hello"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+```
+
+### Frontend Tests
+```typescript
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { AgentCard } from './AgentCard';
+
+describe('AgentCard', () => {
+  it('executes agent on button click', async () => {
+    const mockExecute = jest.fn().mockResolvedValue(undefined);
+    const agent = { id: '1', name: 'Test Agent' };
+    
+    render(<AgentCard agent={agent} onExecute={mockExecute} />);
+    
+    fireEvent.click(screen.getByText('Execute'));
+    
+    await waitFor(() => {
+      expect(mockExecute).toHaveBeenCalledWith('1');
+    });
+  });
+});
+```
+
+## 📦 Dependencies
+
+### Keep Updated
+- FastAPI with pydantic v2
+- React 18+ with hooks
+- TypeScript 5+
+- Python 3.11+
+
+### Security
+- Never commit `.env` files
+- Use environment variables for secrets
+- Validate all user inputs
+- Sanitize file paths for Blender operations
+
+## 🚫 Anti-Patterns
+
+### ❌ DON'T
+```python
+# Don't use generic exceptions
+except Exception:
+    pass
+
+# Don't hardcode values
+API_KEY = "sk-1234567890"
+
+# Don't ignore type hints
+def process(data):  # Missing types
+    return data
+
+# Don't use `any` in TypeScript
+const data: any = response.data;
+```
+
+### ✅ DO
+```python
+# Use specific exceptions
+except ValidationError as e:
+    logger.error(f"Validation failed: {e}")
+    raise
+
+# Use environment variables
+API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Use type hints
+def process(data: Dict[str, Any]) -> ProcessResult:
+    return ProcessResult(data)
+
+# Use proper types in TypeScript
+const data: ApiResponse = response.data;
+```
+
+## 🔄 Git Workflow
+
+### Commits
+- Atomic commits with clear messages
+- Use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`
+- Test before committing
+
+### Branches
+- `main` - production ready
+- `develop` - integration branch
+- `feature/*` - new features
+- `fix/*` - bug fixes
+
+## 📚 Documentation
+
+### Update README.md for:
+- New features
+- API changes
+- Setup instructions
+- Architecture changes
+
+### NEVER create:
+- `*_SUMMARY.md`
+- `*_GUIDE.md`
+- `IMPLEMENTATION_*.md`
+- Redundant documentation files
+
+## 🎯 Development Workflow
+
+1. **Start**: `docker-compose up -d`
+2. **Test**: `pytest` (backend) + `npm test` (frontend)
+3. **Lint**: `ruff check` + `eslint`
+4. **Commit**: Atomic commits with tests
+5. **Push**: After local validation
+
+## 🔍 Code Review Checklist
+
+- [ ] Type hints/types present
+- [ ] Error handling implemented
+- [ ] Tests added/updated
+- [ ] Documentation updated
+- [ ] No hardcoded values
+- [ ] Security considerations
+- [ ] Performance optimized
+
+---
+
+**Version:** 1.0.0
+**Last Updated:** 2025-11-04
+
